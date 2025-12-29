@@ -98,10 +98,11 @@ async function analisarPR(gitApi, prId, requirementsText) {
         INSTRUÇÕES:
         1. Verifique se o código atende à DESCRIÇÃO e CRITÉRIOS DE ACEITE.
         2. Ignore estilo, foque na REGRA DE NEGÓCIO.
-        3. Indique se faltar algo mas que possa estar em outro PR.
-        4. Diga se foi APROVADO ou REPROVADO.
-        5. Se estiver tudo certo, responda com o motivo da aprovação.
-        6. Se faltar algo, liste objetivamente.
+        3. Ignore questões técnicas que não impactam a regra de negócio.
+        4. Indique se faltar algo mas que possa estar em outro PR.
+        5. Diga se foi APROVADO ou REPROVADO.
+        6. Se estiver tudo certo, responda com o motivo da aprovação.
+        7. Se faltar algo, liste objetivamente.
         `;
 
         const result = await model.generateContent(prompt);
