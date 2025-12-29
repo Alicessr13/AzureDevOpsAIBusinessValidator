@@ -4,9 +4,10 @@ const readline = require('readline');
 require('dotenv').config();
 
 // Configurações
-const ORG_URL = "https://dev.azure.com/vsoft1";
+const ORG_URL = process.env.ORG_URL;
 const ADO_PAT = process.env.ADO_PAT;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const FIELD_UPDATE_ANALYSIS = process.env.FIELD_UPDATE_ANALYSIS;
 
 const askQuestion = (query) => {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -24,7 +25,7 @@ async function streamToString(readableStream) {
 
 // Função para analisar
 async function analisarPR(gitApi, prId, requirementsText) {
-    console.log(`\n🔍 --- Iniciando análise do PR #${prId} ---`);
+    console.log(`\n--- Iniciando análise do PR #${prId} ---`);
     
     try {
         const prDetails = await gitApi.getPullRequestById(prId);
@@ -120,7 +121,7 @@ async function analisarPR(gitApi, prId, requirementsText) {
 }
 
 async function main() {
-    console.log("🤖 Iniciando script de análise...");
+    console.log("Iniciando script de análise...");
 
     if (!ADO_PAT || !GOOGLE_API_KEY) process.exit(1);
 
@@ -145,12 +146,12 @@ async function main() {
 
         if (modeInput.trim() === '1') {
             // MODO PR
-            console.log(`\n🔄 Buscando Card vinculado ao PR ${ID}...`);
+            console.log(`\nBuscando Card vinculado ao PR ${ID}...`);
             const pr = await gitApi.getPullRequestById(ID);
             const workItemRefs = await gitApi.getPullRequestWorkItemRefs(pr.repository.id, ID);
 
             if (!workItemRefs || workItemRefs.length === 0) {
-                console.error("❌ Nenhum Card vinculado a este PR.");
+                console.error("Nenhum Card vinculado a este PR.");
                 return;
             }
             wiId = parseInt(workItemRefs[0].url.split('/').pop());
@@ -158,13 +159,13 @@ async function main() {
 
         } else {
             // MODO CARD
-            console.log(`\n🔄 Buscando PRs vinculados ao Card ${ID}...`);
+            console.log(`\nBuscando PRs vinculados ao Card ${ID}...`);
             wiId = ID;
             
             const workItemCheck = await workItemApi.getWorkItem(wiId, null, null, 1);
             
             if (workItemCheck.relations) {
-                console.log(`   🔎 Analisando ${workItemCheck.relations.length} relações...`);
+                console.log(`Analisando ${workItemCheck.relations.length} relações...`);
                 
                 workItemCheck.relations.forEach(rel => {
                     const url = rel.url ? rel.url.toLowerCase() : '';
@@ -177,7 +178,7 @@ async function main() {
                         
                         if (match && match[1]) {
                             const foundId = parseInt(match[1]);
-                            console.log(`   ✅ Identificado PR #${foundId}`);
+                            console.log(`Identificado PR #${foundId}`);
                             prsParaAnalisar.add(foundId);
                         } else {
                             const parts = decodedUrl.split('/');
@@ -204,7 +205,7 @@ async function main() {
 
         const requirementsText = `TÍTULO: ${title}\nDESCRIÇÃO: ${description}\nCRITÉRIOS: ${acceptanceCriteria}`;
 
-        let relatorioFinal = `<h2>🤖 Relatório Gemini AI (${modeInput.trim() === '1' ? 'PR Único' : 'Completo'})</h2><p>Data: ${new Date().toLocaleString()}</p><hr>`;
+        let relatorioFinal = `<h2>Relatório Gemini AI (${modeInput.trim() === '1' ? 'PR Único' : 'Completo'})</h2><p>Data: ${new Date().toLocaleString()}</p><hr>`;
 
         const listaPrs = Array.from(prsParaAnalisar);
 
@@ -218,14 +219,13 @@ async function main() {
         const patchDocument = [
             {
                 "op": "add",
-                "path": "/fields/Custom.JustificativaDod",
+                "path": "/fields/" + FIELD_UPDATE_ANALYSIS,
                 "value": relatorioFinal
             }
         ];
 
         await workItemApi.updateWorkItem(null, patchDocument, wiId);
         console.log(`Sucesso! Card ${wiId} atualizado.`);
-
     } catch (error) {
         console.error("Erro fatal:", error);
     }
