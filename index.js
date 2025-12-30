@@ -185,7 +185,7 @@ async function main() {
         CÓDIGO FONTE (Pode conter múltiplos PRs que completam a tarefa juntos):
         ${codigoConsolidado}
         
-        INSTRUÇÕES:
+        INSTRUÇÕES DE ANÁLISE:
         1. Analise o conjunto COMPLETO de códigos. Às vezes o back-end está num PR e o front-end em outro.
         2. Verifique se a soma de todas as alterações atende à DESCRIÇÃO e CRITÉRIOS DE ACEITE.
         3. Ignore estilo e foque na REGRA DE NEGÓCIO.
@@ -195,20 +195,39 @@ async function main() {
         7. Seja sucinto, objetivo e claro.
         8. Responda de um modo que qualquer pessoa, técnica ou não, entenda e de forma resumida.
         9. Retorne apenas o texto da análise, sem saudações ou despedidas.
-        10. Retorne no inicio do texto a situação final: "Aprovado ✔️" ou "Rejeitado ❌".
+        10. Retorne no inicio do texto a situação final: "Aprovado ✔️" ou "Reprovado ❌".
+
+        INSTRUÇÕES DE FORMATAÇÃO (HTML):
+        1. Responda EXCLUSIVAMENTE em HTML válido. Não use Markdown (* ou **).
+        2. Envolva a situação final ("Aprovado ✔️" ou "Reprovado ❌") em um <h3>.
+        3. Use listas HTML <ul> e <li> para listar os critérios.
+        4. Use <strong> para negrito.
+        5. NÃO inclua tags <html>, <head> ou <body>, apenas o conteúdo interno.
         `;
 
         const result = await model.generateContent(prompt);
         const analise = result.response.text();
 
         console.log("\nAtualizando o Card com a análise unificada...");
-        
+
         const relatorioFinal = `
-        <h2>🤖 Análise (${listaPrs.length} PRs)</h2>
-        <p><strong>PRs Analisados:</strong> ${listaPrs.join(', ')}</p>
-        <p><strong>Data:</strong> ${new Date().toLocaleString()}</p>
-        <hr>
-        ${analise.replace(/\n/g, '<br>')}
+        <div style="font-family: Segoe UI, sans-serif; margin-bottom: 15px;">
+            <h3 style="margin-top: 0; margin-bottom: 5px; color: #2c3e50;">⚡️ Revisor de escopo ⚡️</h3>
+            <p style="margin: 0; color: #555; font-size: 13px;">
+                ➡️ Esta rotina analisa automaticamente o código dos Pull Requests vinculados para validar a aderência às <strong>Regras de Negócio</strong> e <strong>Critérios de Aceite</strong> do card.
+            </p>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <h2>🤖 Resultado da Análise (${listaPrs.length} PRs)</h2>
+            <p style="margin: 5px 0;"><strong>📂 PRs Analisados:</strong> ${listaPrs.join(', ')}</p>
+            <p style="margin: 5px 0;"><strong>📅 Data da Análise:</strong> ${new Date().toLocaleString()}</p>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+        <div style="font-size: 14px; line-height: 1.6;">
+            ${analise.replace(/\n/g, '<br>')}
+        </div>
         `;
         
         const patchDocument = [
