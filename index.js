@@ -197,6 +197,7 @@ async function main() {
         8. Responda de um modo que qualquer pessoa, técnica ou não, entenda e de forma resumida.
         9. Retorne apenas o texto da análise, sem saudações ou despedidas.
         10. Retorne no inicio do texto a situação final: "Aprovado ✔️" ou "Reprovado ❌".
+        11. Caso o exame seja "Reprovado ❌", não retorne a palavra aprovado em nenhuma parte do texto.
 
         INSTRUÇÕES DE FORMATAÇÃO (HTML):
         1. Responda EXCLUSIVAMENTE em HTML válido. Não use Markdown (* ou **).
@@ -231,6 +232,9 @@ async function main() {
         </div>
         `;
         
+        const isApproved = analise.includes("Aprovado ✔️");
+        const CAMPO_STATUS = "Custom.CardAtulizado";
+
         const patchDocument = [
             {
                 "op": "add",
@@ -238,6 +242,23 @@ async function main() {
                 "value": relatorioFinal
             }
         ];
+
+        if (isApproved) {
+            patchDocument.push({
+                "op": "add",
+                "path": "/fields/" + CAMPO_STATUS,
+                "value": "Sim"
+            });
+        } else {
+            if (workItem.fields && workItem.fields[CAMPO_STATUS]) {
+                patchDocument.push({
+                    "op": "remove",
+                    "path": "/fields/" + CAMPO_STATUS
+                });
+            }
+        }
+
+        
 
         await workItemApi.updateWorkItem(null, patchDocument, wiId);
         console.log(`✅ Sucesso! Card ${wiId} atualizado com análise unificada.`);
