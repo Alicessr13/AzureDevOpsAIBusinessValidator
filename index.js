@@ -235,6 +235,39 @@ async function main() {
         const isApproved = analise.includes("Aprovado ✔️");
         const CAMPO_STATUS = "Custom.CardAtulizado";
 
+        let tagsRaw = (workItem.fields['System.Tags'] || "").split(';');
+        
+        // 2. Limpa espaços em branco nas pontas de cada tag
+        let listaTags = tagsRaw.map(tag => tag.trim()).filter(t => t !== "");
+
+        // DEBUG: Mostra exatamente o que o código está vendo (entre aspas para ver espaços)
+        console.log("DEBUG - Tags lidas:", JSON.stringify(listaTags));
+
+        if (isApproved) {
+            // A. REMOÇÃO (BLINDADA)
+            // Filtra removendo qualquer variação de "revisão de escopo" (maiúscula ou minúscula)
+            const tamanhoAntes = listaTags.length;
+            
+            listaTags = listaTags.filter(tag => {
+                return tag.toLowerCase() !== "revisão de escopo";
+            });
+
+            if (listaTags.length < tamanhoAntes) {
+                console.log("DEBUG - Tag 'Revisão de escopo' removida com sucesso.");
+            } else {
+                console.log("DEBUG - A tag 'Revisão de escopo' não foi encontrada para remoção (verifique a grafia exata no log acima).");
+            }
+
+            // B. ADIÇÃO
+            // Verifica se já tem "Em revisão" (também ignorando case)
+            const jaTemTagNova = listaTags.some(tag => tag.toLowerCase() === "em revisão");
+            
+            if (!jaTemTagNova) {
+                listaTags.push("Em revisão");
+                console.log("DEBUG - Tag 'Em revisão' adicionada.");
+            }
+        }
+
         const patchDocument = [
             {
                 "op": "add",
@@ -248,6 +281,11 @@ async function main() {
                 "op": "add",
                 "path": "/fields/" + CAMPO_STATUS,
                 "value": "Sim"
+            });
+            patchDocument.push({
+                "op": "replace",
+                "path": "/fields/System.Tags",
+                "value": listaTags.join('; ')
             });
         } else {
             if (workItem.fields && workItem.fields[CAMPO_STATUS]) {
